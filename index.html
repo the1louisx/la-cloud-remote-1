@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LA Remote</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #1a1a2e;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .pin-input {
+            width: 100%;
+            padding: 18px;
+            font-size: 28px;
+            text-align: center;
+            letter-spacing: 12px;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .pin-input:focus {
+            border-color: #4a90d9;
+        }
+        .pin-input::placeholder {
+            letter-spacing: 4px;
+            font-size: 18px;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            flex: 1;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .arm-btn {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+        .disarm-btn {
+            background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+            color: white;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        .device-id {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-top: 20px;
+            word-break: break-all;
+        }
+        .no-device {
+            text-align: center;
+            color: #721c24;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LA Remote</h1>
+
+        <div id="main-content">
+            <input
+                type="password"
+                id="pin"
+                class="pin-input"
+                maxlength="4"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                placeholder="PIN"
+                autocomplete="off"
+            >
+
+            <div class="buttons">
+                <button class="arm-btn" onclick="sendCommand('ARM')">ARM</button>
+                <button class="disarm-btn" onclick="sendCommand('DISARM')">DISARM</button>
+            </div>
+
+            <div id="message" class="message"></div>
+
+            <div id="device-display" class="device-id"></div>
+        </div>
+
+        <div id="no-device" class="no-device" style="display: none;">
+            <p>No device specified.</p>
+            <p>Please scan the QR code from your Mac.</p>
+        </div>
+    </div>
+
+    <script>
+        // Final push fix for GitHub Pages
+        const BACKEND_URL = 'https://la-cloud-remote.onrender.com';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceId = urlParams.get('device');
+
+        if (!deviceId) {
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('no-device').style.display = 'block';
+        } else {
+            document.getElementById('device-display').textContent = 'Device: ' + deviceId.substring(0, 8) + '...';
+        }
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        function showMessage(text, isError) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + (isError ? 'error' : 'success');
+            setTimeout(() => { msg.className = 'message'; }, 3000);
+        }
+
+        function setButtonsEnabled(enabled) {
+            document.querySelectorAll('button').forEach(btn => { btn.disabled = !enabled; });
+        }
+
+        async function sendCommand(command) {
+            const pin = document.getElementById('pin').value;
+
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                showMessage('Please enter a 4-digit PIN', true);
+                return;
+            }
+
+            if (!deviceId) {
+                showMessage('No device ID', true);
+                return;
+            }
+
+            setButtonsEnabled(false);
+
+            try {
+                const pinHash = await sha256(pin);
+
+                const response = await fetch(BACKEND_URL + '/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        device_id: deviceId,
+                        pin_hash: pinHash,
+                        command: command
+                    })
+                });
+
+                if (response.ok) {
+                    showMessage('Command sent: ' + command, false);
+                    document.getElementById('pin').value = '';
+                } else if (response.status === 403) {
+                    showMessage('Wrong PIN', true);
+                } else if (response.status === 404) {
+                    showMessage('Unknown device / QR invalid', true);
+                } else if (response.status === 429) {
+                    showMessage('Too many commands. Please wait.', true);
+                } else {
+                    showMessage('Error: ' + response.status, true);
+                }
+            } catch (error) {
+                showMessage('Network error. Check connection.', true);
+            }
+
+            setButtonsEnabled(true);
+        }
+    </script>
+</body>
+</html>
