@@ -70,6 +70,7 @@ def append_usage_event(e: "UsageEvent") -> None:
 class RegisterRequest(BaseModel):
     device_id: str  # Client-generated UUID
     pin_hash: str
+    session_token: Optional[str] = None  # NEW: Session token from QR code
 
 
 class RegisterResponse(BaseModel):
@@ -80,6 +81,7 @@ class CommandRequest(BaseModel):
     device_id: str
     pin_hash: str
     command: str
+    session_token: Optional[str] = None  # NEW: Session token from web page
 
 
 class CommandResponse(BaseModel):
@@ -100,9 +102,20 @@ class HealthResponse(BaseModel):
     message: str
 
 
+# NEW: Models for session update endpoint
+class UpdateSessionRequest(BaseModel):
+    device_id: str
+    device_token: str
+    session_token: str
+
+
+class UpdateSessionResponse(BaseModel):
+    status: str
+
+
 # New: analytics event models
 class UsageEvent(BaseModel):
-    # On the Mac, you’ll send DeviceIdentity.deviceId here
+    # On the Mac, you'll send DeviceIdentity.deviceId here
     user_id: str       # anonymous per-device ID
     event: str         # "armed", "disarmed", "alarm_fired"
     timestamp: str     # ISO8601 string from the client (UTC)
@@ -144,6 +157,7 @@ async def register(request: RegisterRequest):
     devices[request.device_id] = {
         "pin_hash": request.pin_hash,
         "device_token": device_token,
+        "session_token": request.session_token or "",  # NEW: Store session token
         "queue": [],
         "last_seen": time.time(),
     }
@@ -167,6 +181,14 @@ async def command(request: CommandRequest):
     if request.pin_hash != device["pin_hash"]:
         raise HTTPException(status_code=403, detail="Invalid PIN")
 
+    # NEW: Verify session token (if device has one set)
+    stored_session = device.get("session_token", "")
+    if stored_session and request.session_token != stored_session:
+        raise HTTPException(
+            status_code=410,
+            detail="Session expired. Scan new QR code.",
+        )
+
     # Validate command
     if request.command not in ["ARM", "DISARM"]:
         raise HTTPException(
@@ -183,6 +205,24 @@ async def command(request: CommandRequest):
 
     # Queue the command
     device["queue"].append(request.command)
+
+    return {"status": "ok"}
+
+
+# NEW: Endpoint to update session token after DISARM
+@app.post("/update-session", response_model=UpdateSessionResponse)
+async def update_session(request: UpdateSessionRequest):
+    """Update session token after DISARM to invalidate old QR codes."""
+    if request.device_id not in devices:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    device = devices[request.device_id]
+
+    if request.device_token != device["device_token"]:
+        raise HTTPException(status_code=403, detail="Invalid device token")
+
+    device["session_token"] = request.session_token
+    device["last_seen"] = time.time()
 
     return {"status": "ok"}
 
