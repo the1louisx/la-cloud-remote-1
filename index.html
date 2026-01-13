@@ -151,6 +151,7 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const deviceId = urlParams.get('device');
+        const sessionToken = urlParams.get('session');  // NEW: Get session token from URL
 
         if (!deviceId) {
             document.getElementById('main-content').style.display = 'none';
@@ -202,7 +203,8 @@
                     body: JSON.stringify({
                         device_id: deviceId,
                         pin_hash: pinHash,
-                        command: command
+                        command: command,
+                        session_token: sessionToken || ''  // NEW: Send session token
                     })
                 });
 
@@ -213,6 +215,8 @@
                     showMessage('Wrong PIN', true);
                 } else if (response.status === 404) {
                     showMessage('Unknown device / QR invalid', true);
+                } else if (response.status === 410) {
+                    showMessage('Session expired. Scan new QR code.', true);  // NEW: Handle 410
                 } else if (response.status === 429) {
                     showMessage('Too many commands. Please wait.', true);
                 } else {
