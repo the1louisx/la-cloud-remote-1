@@ -115,22 +115,39 @@
             color: #1e8449;
         }
 
-        /* Command sent screen */
-        .command-screen {
-            display: none;
+        /* Command buttons */
+        .cmd-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 10px;
         }
-        .command-status {
-            font-size: 18px;
+        .cmd-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 14px;
+            font-size: 17px;
             font-weight: 600;
-            color: #2D2D2D;
-            margin-top: 20px;
-            opacity: 0.7;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
         }
-        .command-detail {
-            font-size: 13px;
-            color: #2D2D2D;
+        .cmd-btn:active {
+            transform: scale(0.97);
+        }
+        .cmd-btn:disabled {
             opacity: 0.4;
-            margin-top: 8px;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .cmd-btn.arm {
+            background: #2D2D2D;
+            color: #F3EEE7;
+        }
+        .cmd-btn.disarm {
+            background: #dc3545;
+            color: #fff;
         }
 
         /* No token screen */
@@ -190,7 +207,7 @@
         <h1 id="title">LA Remote</h1>
         <div class="subtitle" id="subtitle">Enter PIN to connect</div>
 
-        <!-- PIN entry screen -->
+        <!-- PIN entry screen (used for initial pairing AND disarm PIN) -->
         <div id="pin-screen">
             <input type="tel" id="hidden-pin" class="hidden-input" maxlength="4" inputmode="numeric" autocomplete="off">
 
@@ -205,11 +222,13 @@
             <div class="message" id="pin-message"></div>
         </div>
 
-        <!-- Command sent screen -->
-        <div id="command-screen" class="command-screen">
-            <div class="command-status" id="cmd-status"></div>
-            <div class="command-detail" id="cmd-detail"></div>
-            <div class="message" id="cmd-message"></div>
+        <!-- Armed screen (waiting to disarm) -->
+        <div id="armed-screen" style="display:none;">
+            <div class="status" id="armed-status" style="opacity:0.7;">Tap below to disarm</div>
+            <div class="cmd-buttons">
+                <button class="cmd-btn disarm" id="btn-disarm" onclick="startDisarm()">DISARM</button>
+            </div>
+            <div class="message" id="armed-message"></div>
         </div>
 
         <!-- No token -->
@@ -220,9 +239,13 @@
     </div>
 
     <div class="branding">LaptopAlarm</div>
+    <footer style="position:fixed;bottom:6px;left:0;width:100%;text-align:center;font-size:11px;color:#2D2D2D;opacity:0.25;">
+        &copy; 2026 LA Software UG &middot; <a href="privacy.html" style="color:#2D2D2D;">Privacy Policy</a>
+    </footer>
 
     <script>
         const BACKEND_URL = 'https://la-cloud-remote.onrender.com';
+        const SESSION_STORAGE_KEY = 'la_remote_session';
 
         const urlParams = new URLSearchParams(window.location.search);
         const pairingToken = urlParams.get('token');
@@ -231,11 +254,37 @@
         let pin = '';
         let busy = false;
 
-        // --- Init ---
-        if (!pairingToken) {
-            document.getElementById('pin-screen').style.display = 'none';
-            document.getElementById('no-token').style.display = 'block';
-            document.getElementById('subtitle').textContent = '';
+        // Current mode: 'pairing' (initial QR+PIN) or 'disarm' (PIN for disarm command)
+        let pinMode = 'pairing';
+
+        // --- Session persistence ---
+        function saveSession(token) {
+            const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+                session_token: token,
+                expires_at: expiresAt,
+            }));
+        }
+
+        function loadSession() {
+            try {
+                const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+                if (!raw) return null;
+                const data = JSON.parse(raw);
+                if (Date.now() > data.expires_at) {
+                    localStorage.removeItem(SESSION_STORAGE_KEY);
+                    return null;
+                }
+                return data.session_token;
+            } catch (e) {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+                return null;
+            }
+        }
+
+        function clearSession() {
+            localStorage.removeItem(SESSION_STORAGE_KEY);
+            sessionToken = null;
         }
 
         // --- Crypto ---
@@ -278,22 +327,54 @@
             document.getElementById('hidden-pin').focus();
         }
 
+        // --- Screen transitions ---
+        function showScreen(screenId) {
+            ['pin-screen', 'armed-screen', 'no-token'].forEach(id => {
+                document.getElementById(id).style.display = (id === screenId) ? 'block' : 'none';
+            });
+        }
+
+        function showArmedScreen() {
+            document.getElementById('title').textContent = 'Armed';
+            document.getElementById('subtitle').textContent = 'System is armed';
+            showScreen('armed-screen');
+            document.getElementById('armed-status').textContent = 'Tap below to disarm';
+            document.getElementById('btn-disarm').disabled = false;
+        }
+
+        function showPinScreen(mode) {
+            pinMode = mode;
+            showScreen('pin-screen');
+            if (mode === 'pairing') {
+                document.getElementById('title').textContent = 'LA Remote';
+                document.getElementById('subtitle').textContent = 'Enter PIN to connect';
+                document.getElementById('pin-status').textContent = 'Enter your 4-digit PIN';
+            } else {
+                document.getElementById('title').textContent = 'Confirm Disarm';
+                document.getElementById('subtitle').textContent = 'Re-enter PIN to disarm';
+                document.getElementById('pin-status').textContent = 'Enter your 4-digit PIN';
+            }
+            resetPin();
+        }
+
         // --- Hidden input handler ---
         const hiddenInput = document.getElementById('hidden-pin');
 
         hiddenInput.addEventListener('input', function() {
-            // Only allow digits
             this.value = this.value.replace(/\D/g, '').slice(0, 4);
             pin = this.value;
             updateDots();
 
             if (pin.length === 4 && !busy) {
                 busy = true;
-                doPair();
+                if (pinMode === 'pairing') {
+                    doPair();
+                } else {
+                    doDisarmWithPin();
+                }
             }
         });
 
-        // Also handle physical keyboard
         document.addEventListener('keydown', function(e) {
             if (busy) return;
             if (document.getElementById('pin-screen').style.display === 'none') return;
@@ -304,7 +385,11 @@
                 updateDots();
                 if (pin.length === 4) {
                     busy = true;
-                    doPair();
+                    if (pinMode === 'pairing') {
+                        doPair();
+                    } else {
+                        doDisarmWithPin();
+                    }
                 }
             } else if (e.key === 'Backspace' && pin.length > 0) {
                 pin = pin.slice(0, -1);
@@ -313,10 +398,7 @@
             }
         });
 
-        // Auto-focus on load
-        setTimeout(focusInput, 300);
-
-        // --- Pair + auto-send command ---
+        // --- Pair (QR token + PIN) ---
         async function doPair() {
             if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
                 busy = false;
@@ -341,9 +423,17 @@
                 if (resp.ok) {
                     const data = await resp.json();
                     sessionToken = data.session_token;
+                    saveSession(sessionToken);
 
-                    // Auto-send toggle command
-                    await sendToggleCommand();
+                    // Remove token from URL so refresh doesn't re-consume
+                    if (window.history.replaceState) {
+                        const cleanUrl = window.location.origin + window.location.pathname;
+                        window.history.replaceState({}, document.title, cleanUrl);
+                    }
+
+                    // Auto-send ARM immediately after pairing
+                    await doArm();
+                    busy = false;
                 } else if (resp.status === 403) {
                     shakeDots();
                     showMessage('pin-message', 'Wrong PIN or expired QR', true);
@@ -372,45 +462,120 @@
             setTimeout(focusInput, 100);
         }
 
-        // --- Send toggle command (ARM if disarmed, DISARM if armed) ---
-        async function sendToggleCommand() {
+        // --- ARM (auto-sent after pairing, no user interaction) ---
+        async function doArm() {
             if (!sessionToken) return;
 
-            // Send ARM first — server/app will figure out the toggle
-            // If app is disarmed → ARM command arms it
-            // If app is armed → DISARM command disarms it
-            // We send both — the app ignores commands that don't apply to current state
-            const commands = ['ARM', 'DISARM'];
+            try {
+                const resp = await fetch(BACKEND_URL + '/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        command: 'ARM',
+                    })
+                });
 
-            let sentCommand = null;
-            for (const cmd of commands) {
-                try {
-                    const resp = await fetch(BACKEND_URL + '/command', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            session_token: sessionToken,
-                            command: cmd,
-                        })
-                    });
-                    if (resp.ok) {
-                        sentCommand = cmd;
-                    }
-                } catch (e) { }
+                if (resp.ok) {
+                    showArmedScreen();
+                    showMessage('armed-message', 'ARM command sent', false);
+                } else if (resp.status === 403) {
+                    clearSession();
+                    document.getElementById('title').textContent = 'Session Expired';
+                    document.getElementById('subtitle').textContent = '';
+                    showScreen('no-token');
+                    document.getElementById('no-token').querySelector('p').textContent = 'Session expired.';
+                    document.getElementById('no-token').querySelectorAll('p')[1].textContent = 'Scan a new QR code from your laptop.';
+                } else {
+                    // ARM failed but session still valid — show armed screen anyway
+                    // (device may already be armed from a previous command)
+                    showArmedScreen();
+                    const errBody = await resp.text().catch(() => '');
+                    console.log('[ARM] error', resp.status, errBody);
+                }
+            } catch (e) {
+                // Network error — still show armed screen (session is valid)
+                showArmedScreen();
+                showMessage('armed-message', 'Network error sending ARM.', true);
+            }
+        }
+
+        // --- DISARM flow: show PIN screen, then send with pin_hash ---
+        function startDisarm() {
+            if (busy) return;
+            showPinScreen('disarm');
+        }
+
+        async function doDisarmWithPin() {
+            if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                busy = false;
+                return;
             }
 
-            // Switch to command screen
-            document.getElementById('pin-screen').style.display = 'none';
-            document.getElementById('command-screen').style.display = 'block';
-            document.getElementById('subtitle').textContent = '';
+            document.getElementById('pin-status').textContent = 'Sending...';
+            document.getElementById('pin-status').style.opacity = '0.6';
 
-            document.getElementById('title').textContent = 'Command Sent';
-            document.getElementById('cmd-status').textContent = 'Signal sent to your laptop';
-            document.getElementById('cmd-detail').textContent = 'You can close this page now.';
+            try {
+                const pinHash = await sha256(pin);
 
-            showMessage('cmd-message', 'Connected successfully', false);
-            busy = false;
+                const resp = await fetch(BACKEND_URL + '/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        command: 'DISARM',
+                        pin_hash: pinHash,
+                    })
+                });
+
+                if (resp.ok) {
+                    // DISARM succeeded — burn session so page can't be reused
+                    clearSession();
+                    busy = false;
+                    document.getElementById('title').textContent = 'Disarmed';
+                    document.getElementById('subtitle').textContent = 'Session ended';
+                    showScreen('no-token');
+                    document.getElementById('no-token').querySelector('p').textContent = 'Disarmed successfully.';
+                    document.getElementById('no-token').querySelectorAll('p')[1].textContent = 'Scan a new QR code to use again.';
+                } else if (resp.status === 403) {
+                    shakeDots();
+                    showMessage('pin-message', 'Wrong PIN or session expired', true);
+                    resetPin();
+                } else if (resp.status === 429) {
+                    const data = await resp.json().catch(() => ({}));
+                    showMessage('pin-message', data.detail || 'Too many attempts. Wait and retry.', true);
+                    resetPin();
+                } else {
+                    const errBody = await resp.text().catch(() => '');
+                    console.log('[DISARM] error', resp.status, errBody);
+                    showMessage('pin-message', 'Error ' + resp.status + ': ' + (errBody || 'Unknown'), true);
+                    resetPin();
+                }
+            } catch (error) {
+                showMessage('pin-message', 'Network error. Check connection.', true);
+                resetPin();
+            }
         }
+
+        // --- Init: decide which screen to show ---
+        (function init() {
+            const savedToken = loadSession();
+
+            if (savedToken) {
+                // Valid saved session — already armed, show disarm option
+                sessionToken = savedToken;
+                showArmedScreen();
+            } else if (pairingToken) {
+                // No saved session but QR token present — start pairing
+                showPinScreen('pairing');
+                setTimeout(focusInput, 300);
+            } else {
+                // Nothing — prompt to scan QR
+                document.getElementById('pin-screen').style.display = 'none';
+                document.getElementById('no-token').style.display = 'block';
+                document.getElementById('subtitle').textContent = '';
+            }
+        })();
     </script>
 </body>
 </html>
