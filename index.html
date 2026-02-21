@@ -585,14 +585,16 @@
         (function init() {
             const savedToken = loadSession();
 
-            if (savedToken) {
-                // Valid saved session — already armed, show disarm option
-                sessionToken = savedToken;
-                showArmedScreen();
-            } else if (pairingToken) {
-                // No saved session but QR token present — start pairing
+            if (pairingToken) {
+                // New QR scanned — always start fresh pairing
+                // (server already revoked old sessions when creating this token)
+                clearSession();
                 showPinScreen('pairing');
                 setTimeout(focusInput, 300);
+            } else if (savedToken) {
+                // No QR in URL, but valid saved session — show disarm option
+                sessionToken = savedToken;
+                showArmedScreen();
             } else {
                 // Nothing — prompt to scan QR
                 document.getElementById('pin-screen').style.display = 'none';
