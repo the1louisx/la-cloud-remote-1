@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Privacy Policy - LA Remote</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F3EEE7;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 540px;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-block;
+            color: #2D2D2D;
+            opacity: 0.45;
+            font-size: 13px;
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: opacity 0.15s;
+        }
+        .back-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Title */
+        h1 {
+            color: #2D2D2D;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        .subtitle {
+            color: #2D2D2D;
+            opacity: 0.45;
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+
+        /* Section headings */
+        h2 {
+            color: #2D2D2D;
+            font-size: 17px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 10px;
+        }
+
+        /* Body text */
+        p, li {
+            color: #2D2D2D;
+            opacity: 0.7;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 10px;
+        }
+        ul li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 6px;
+        }
+        ul li::before {
+            content: "\2022";
+            position: absolute;
+            left: 0;
+            opacity: 0.4;
+        }
+
+        /* Contact link */
+        a {
+            color: #2D2D2D;
+            opacity: 0.85;
+        }
+
+        /* Divider */
+        hr {
+            border: none;
+            border-top: 1px solid rgba(45, 45, 45, 0.1);
+            margin: 32px 0;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(45, 45, 45, 0.1);
+            color: #2D2D2D;
+            opacity: 0.25;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">&larr; Back</a>
+
+        <h1>Privacy Policy</h1>
+        <div class="subtitle">LA Cloud Remote</div>
+
+        <!-- 1. Data Controller -->
+        <h2>1. Data Controller</h2>
+        <p>
+            LA Software UG<br>
+            Berlin, Germany
+        </p>
+
+        <!-- 2. Data We Process -->
+        <h2>2. Data We Process</h2>
+        <p>LA Cloud Remote processes the minimum data needed to operate the service:</p>
+        <ul>
+            <li><strong>Device &amp; security identifiers</strong> &mdash; a random device ID, authentication tokens (device token, session token, pairing token), and a hashed PIN. Your PIN is never stored or transmitted in plaintext.</li>
+            <li><strong>Usage metrics</strong> &mdash; per-device timestamps such as first seen, last seen, and arm/disarm events, used to measure retention and reliability.</li>
+            <li><strong>Technical logs</strong> &mdash; IP address and user-agent string, collected automatically by our hosting infrastructure for rate limiting and abuse prevention.</li>
+        </ul>
+        <p>We do not collect email addresses, names, or any account information. There are no user accounts.</p>
+
+        <!-- 3. Purpose of Processing -->
+        <h2>3. Purpose of Processing</h2>
+        <ul>
+            <li><strong>Service operation</strong> &mdash; enabling remote arm and disarm commands between your phone and laptop.</li>
+            <li><strong>Abuse prevention</strong> &mdash; rate limiting and escalating lockouts to protect against brute-force attacks.</li>
+            <li><strong>Reliability &amp; retention</strong> &mdash; measuring how the service is used so we can improve it.</li>
+        </ul>
+
+        <!-- 4. Legal Basis -->
+        <h2>4. Legal Basis</h2>
+        <p>We process data under the following legal bases (GDPR):</p>
+        <ul>
+            <li><strong>Legitimate interests</strong> (Art. 6(1)(f)) &mdash; operating the service, preventing abuse, and improving reliability.</li>
+            <li><strong>Contract necessity</strong> (Art. 6(1)(b)) &mdash; processing required to provide the remote control functionality you use.</li>
+        </ul>
+
+        <!-- 5. Data Retention -->
+        <h2>5. Data Retention</h2>
+        <ul>
+            <li><strong>Pairing tokens</strong> &mdash; approximately 2 minutes (automatically deleted after use or expiry).</li>
+            <li><strong>Session tokens</strong> &mdash; up to 24 hours.</li>
+            <li><strong>Device registrations</strong> &mdash; removed after 24 hours of inactivity.</li>
+            <li><strong>Usage metrics</strong> &mdash; retained for up to 180 days.</li>
+            <li><strong>Server logs</strong> &mdash; retained for up to 30 days by our hosting provider.</li>
+        </ul>
+
+        <!-- 6. Sharing -->
+        <h2>6. Data Sharing</h2>
+        <ul>
+            <li>Our backend is hosted on <strong>Render.com</strong>, which acts as a data processor.</li>
+            <li>The phone interface is served via <strong>GitHub Pages</strong>.</li>
+            <li>We do <strong>not</strong> sell your data to anyone.</li>
+            <li>There are <strong>no</strong> third-party tracking scripts, advertising, or analytics cookies.</li>
+        </ul>
+
+        <!-- 7. Your Rights -->
+        <h2>7. Your Rights</h2>
+        <p>Under the GDPR, you have the right to:</p>
+        <ul>
+            <li><strong>Access</strong> &mdash; request a copy of data associated with your device ID.</li>
+            <li><strong>Deletion</strong> &mdash; request removal of your data at any time.</li>
+            <li><strong>Objection</strong> &mdash; object to processing based on legitimate interests.</li>
+            <li><strong>Complaint</strong> &mdash; lodge a complaint with a supervisory authority (e.g., the Berlin Commissioner for Data Protection).</li>
+        </ul>
+        <p>To exercise any of these rights, contact us through our website.</p>
+
+        <hr>
+
+        <div class="footer">&copy; 2026 LA Software UG</div>
+    </div>
+</body>
+</html>
