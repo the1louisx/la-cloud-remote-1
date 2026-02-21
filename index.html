@@ -52,6 +52,7 @@
             opacity: 0.45;
             font-size: 13px;
             margin-bottom: 40px;
+            transition: opacity 0.4s ease;
         }
 
         /* PIN dots */
@@ -101,7 +102,7 @@
             border-radius: 10px;
             margin-top: 16px;
             opacity: 0;
-            transition: opacity 0.25s;
+            transition: opacity 0.4s ease;
         }
         .message.visible {
             opacity: 1;
@@ -131,10 +132,11 @@
             font-weight: 600;
             letter-spacing: 1px;
             cursor: pointer;
-            transition: opacity 0.15s, transform 0.1s;
+            transition: opacity 0.3s ease, transform 0.2s ease, background 0.3s ease;
         }
         .cmd-btn:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
+            opacity: 0.7;
         }
         .cmd-btn:disabled {
             opacity: 0.4;
@@ -146,8 +148,16 @@
             color: #F3EEE7;
         }
         .cmd-btn.disarm {
-            background: #dc3545;
-            color: #fff;
+            background: rgba(45, 45, 45, 0.12);
+            color: #2D2D2D;
+        }
+
+        /* Screen fade transitions */
+        #pin-screen, #armed-screen, #no-token {
+            transition: opacity 0.35s ease;
+        }
+        .fade-out {
+            opacity: 0 !important;
         }
 
         /* No token screen */
@@ -327,10 +337,23 @@
             document.getElementById('hidden-pin').focus();
         }
 
-        // --- Screen transitions ---
+        // --- Screen transitions (with fade) ---
         function showScreen(screenId) {
-            ['pin-screen', 'armed-screen', 'no-token'].forEach(id => {
-                document.getElementById(id).style.display = (id === screenId) ? 'block' : 'none';
+            const screens = ['pin-screen', 'armed-screen', 'no-token'];
+            // Fade out visible screens, then swap
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id !== screenId) {
+                    el.classList.add('fade-out');
+                    setTimeout(() => { el.style.display = 'none'; el.classList.remove('fade-out'); }, 350);
+                }
+            });
+            // Fade in target
+            const target = document.getElementById(screenId);
+            target.classList.add('fade-out');
+            target.style.display = 'block';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => { target.classList.remove('fade-out'); });
             });
         }
 
@@ -431,9 +454,10 @@
                         window.history.replaceState({}, document.title, cleanUrl);
                     }
 
-                    // Auto-send ARM immediately after pairing
-                    await doArm();
+                    // Show armed screen immediately, send ARM in background
                     busy = false;
+                    showArmedScreen();
+                    doArm();
                 } else if (resp.status === 403) {
                     shakeDots();
                     showMessage('pin-message', 'Wrong PIN or expired QR', true);
