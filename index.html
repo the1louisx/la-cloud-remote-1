@@ -9,10 +9,11 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: #F3EEE7;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -20,213 +21,395 @@
             padding: 20px;
         }
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 40px 30px;
             width: 100%;
             max-width: 320px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
             text-align: center;
-            color: #1a1a2e;
-            margin-bottom: 30px;
-            font-size: 24px;
         }
-        .pin-input {
-            width: 100%;
-            padding: 18px;
-            font-size: 28px;
-            text-align: center;
-            letter-spacing: 12px;
-            border: 2px solid #ddd;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-        .pin-input:focus {
-            border-color: #4a90d9;
-        }
-        .pin-input::placeholder {
-            letter-spacing: 4px;
-            font-size: 18px;
-        }
-        .buttons {
-            display: flex;
-            gap: 15px;
-        }
-        button {
-            flex: 1;
-            padding: 18px;
-            font-size: 18px;
-            font-weight: 600;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-        button:active {
-            transform: scale(0.95);
-        }
-        button:disabled {
+
+        /* Lock icon */
+        .lock-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
             opacity: 0.5;
-            cursor: not-allowed;
         }
-        .arm-btn {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
+        .lock-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: #2D2D2D;
         }
-        .disarm-btn {
-            background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-            color: white;
+
+        /* Title */
+        h1 {
+            color: #2D2D2D;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
         }
+        .subtitle {
+            color: #2D2D2D;
+            opacity: 0.45;
+            font-size: 13px;
+            margin-bottom: 40px;
+        }
+
+        /* PIN dots */
+        .pin-dots {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .pin-dot {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(45, 45, 45, 0.25);
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .pin-dot.filled {
+            background: #E8E4E0;
+            border-color: rgba(45, 45, 45, 0.5);
+        }
+        .pin-dot-inner {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2D2D2D;
+            opacity: 0.85;
+        }
+
+        /* Status text */
+        .status {
+            color: #2D2D2D;
+            font-size: 13px;
+            opacity: 0.45;
+            margin-bottom: 8px;
+            min-height: 20px;
+            transition: opacity 0.2s;
+        }
+
+        /* Message */
         .message {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
+            font-size: 13px;
             font-weight: 500;
-            display: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            opacity: 0;
+            transition: opacity 0.25s;
         }
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            display: block;
+        .message.visible {
+            opacity: 1;
         }
         .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            display: block;
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
         }
-        .device-id {
-            text-align: center;
-            color: #888;
-            font-size: 12px;
+        .message.success {
+            background: rgba(39, 174, 96, 0.1);
+            color: #1e8449;
+        }
+
+        /* Command sent screen */
+        .command-screen {
+            display: none;
+        }
+        .command-status {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2D2D2D;
             margin-top: 20px;
-            word-break: break-all;
+            opacity: 0.7;
         }
-        .no-device {
-            text-align: center;
-            color: #721c24;
-            padding: 20px;
+        .command-detail {
+            font-size: 13px;
+            color: #2D2D2D;
+            opacity: 0.4;
+            margin-top: 8px;
+        }
+
+        /* No token screen */
+        .no-token {
+            display: none;
+        }
+        .no-token p {
+            color: #2D2D2D;
+            opacity: 0.5;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        /* Shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+        }
+        .shake {
+            animation: shake 0.35s ease;
+        }
+
+        /* Branding */
+        .branding {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2D2D2D;
+            opacity: 0.2;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Hidden input to capture keyboard on mobile */
+        .hidden-input {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LA Remote</h1>
-
-        <div id="main-content">
-            <input
-                type="password"
-                id="pin"
-                class="pin-input"
-                maxlength="4"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                placeholder="PIN"
-                autocomplete="off"
-            >
-
-            <div class="buttons">
-                <button class="arm-btn" onclick="sendCommand('ARM')">ARM</button>
-                <button class="disarm-btn" onclick="sendCommand('DISARM')">DISARM</button>
-            </div>
-
-            <div id="message" class="message"></div>
-
-            <div id="device-display" class="device-id"></div>
+        <!-- Lock icon -->
+        <div class="lock-icon">
+            <svg viewBox="2 0 20 24">
+                <path id="lock-path" d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
+            </svg>
         </div>
 
-        <div id="no-device" class="no-device" style="display: none;">
-            <p>No device specified.</p>
-            <p>Please scan the QR code from your Mac.</p>
+        <h1 id="title">LA Remote</h1>
+        <div class="subtitle" id="subtitle">Enter PIN to connect</div>
+
+        <!-- PIN entry screen -->
+        <div id="pin-screen">
+            <input type="tel" id="hidden-pin" class="hidden-input" maxlength="4" inputmode="numeric" autocomplete="off">
+
+            <div class="pin-dots" id="pin-dots" onclick="focusInput()">
+                <div class="pin-dot" id="dot0"><span class="pin-dot-inner" id="txt0"></span></div>
+                <div class="pin-dot" id="dot1"><span class="pin-dot-inner" id="txt1"></span></div>
+                <div class="pin-dot" id="dot2"><span class="pin-dot-inner" id="txt2"></span></div>
+                <div class="pin-dot" id="dot3"><span class="pin-dot-inner" id="txt3"></span></div>
+            </div>
+
+            <div class="status" id="pin-status">Enter your 4-digit PIN</div>
+            <div class="message" id="pin-message"></div>
+        </div>
+
+        <!-- Command sent screen -->
+        <div id="command-screen" class="command-screen">
+            <div class="command-status" id="cmd-status"></div>
+            <div class="command-detail" id="cmd-detail"></div>
+            <div class="message" id="cmd-message"></div>
+        </div>
+
+        <!-- No token -->
+        <div id="no-token" class="no-token">
+            <p>No pairing token found.</p>
+            <p>Scan the QR code from your laptop.</p>
         </div>
     </div>
 
+    <div class="branding">LaptopAlarm</div>
+
     <script>
-        // Final push fix for GitHub Pages
         const BACKEND_URL = 'https://la-cloud-remote.onrender.com';
 
         const urlParams = new URLSearchParams(window.location.search);
-        const deviceId = urlParams.get('device');
-        const sessionToken = urlParams.get('session');  // NEW: Get session token from URL
+        const pairingToken = urlParams.get('token');
 
-        if (!deviceId) {
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('no-device').style.display = 'block';
-        } else {
-            document.getElementById('device-display').textContent = 'Device: ' + deviceId.substring(0, 8) + '...';
+        let sessionToken = null;
+        let pin = '';
+        let busy = false;
+
+        // --- Init ---
+        if (!pairingToken) {
+            document.getElementById('pin-screen').style.display = 'none';
+            document.getElementById('no-token').style.display = 'block';
+            document.getElementById('subtitle').textContent = '';
         }
 
+        // --- Crypto ---
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function showMessage(text, isError) {
-            const msg = document.getElementById('message');
+        // --- PIN display ---
+        function updateDots() {
+            for (let i = 0; i < 4; i++) {
+                const dot = document.getElementById('dot' + i);
+                const txt = document.getElementById('txt' + i);
+                if (i < pin.length) {
+                    dot.classList.add('filled');
+                    txt.textContent = '\u25CF';
+                } else {
+                    dot.classList.remove('filled');
+                    txt.textContent = '';
+                }
+            }
+        }
+
+        function shakeDots() {
+            const dots = document.getElementById('pin-dots');
+            dots.classList.add('shake');
+            setTimeout(() => dots.classList.remove('shake'), 400);
+        }
+
+        function showMessage(elementId, text, isError) {
+            const msg = document.getElementById(elementId);
             msg.textContent = text;
-            msg.className = 'message ' + (isError ? 'error' : 'success');
-            setTimeout(() => { msg.className = 'message'; }, 3000);
+            msg.className = 'message visible ' + (isError ? 'error' : 'success');
+            setTimeout(() => { msg.className = 'message'; }, 3500);
         }
 
-        function setButtonsEnabled(enabled) {
-            document.querySelectorAll('button').forEach(btn => { btn.disabled = !enabled; });
+        function focusInput() {
+            document.getElementById('hidden-pin').focus();
         }
 
-        async function sendCommand(command) {
-            const pin = document.getElementById('pin').value;
+        // --- Hidden input handler ---
+        const hiddenInput = document.getElementById('hidden-pin');
 
+        hiddenInput.addEventListener('input', function() {
+            // Only allow digits
+            this.value = this.value.replace(/\D/g, '').slice(0, 4);
+            pin = this.value;
+            updateDots();
+
+            if (pin.length === 4 && !busy) {
+                busy = true;
+                doPair();
+            }
+        });
+
+        // Also handle physical keyboard
+        document.addEventListener('keydown', function(e) {
+            if (busy) return;
+            if (document.getElementById('pin-screen').style.display === 'none') return;
+
+            if (e.key >= '0' && e.key <= '9' && pin.length < 4) {
+                pin += e.key;
+                hiddenInput.value = pin;
+                updateDots();
+                if (pin.length === 4) {
+                    busy = true;
+                    doPair();
+                }
+            } else if (e.key === 'Backspace' && pin.length > 0) {
+                pin = pin.slice(0, -1);
+                hiddenInput.value = pin;
+                updateDots();
+            }
+        });
+
+        // Auto-focus on load
+        setTimeout(focusInput, 300);
+
+        // --- Pair + auto-send command ---
+        async function doPair() {
             if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-                showMessage('Please enter a 4-digit PIN', true);
+                busy = false;
                 return;
             }
 
-            if (!deviceId) {
-                showMessage('No device ID', true);
-                return;
-            }
-
-            setButtonsEnabled(false);
+            document.getElementById('pin-status').textContent = 'Connecting...';
+            document.getElementById('pin-status').style.opacity = '0.6';
 
             try {
                 const pinHash = await sha256(pin);
 
-                const response = await fetch(BACKEND_URL + '/command', {
+                const resp = await fetch(BACKEND_URL + '/pairing/consume', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        device_id: deviceId,
+                        pairing_token: pairingToken,
                         pin_hash: pinHash,
-                        command: command,
-                        session_token: sessionToken || ''  // NEW: Send session token
                     })
                 });
 
-                if (response.ok) {
-                    showMessage('Command sent: ' + command, false);
-                    document.getElementById('pin').value = '';
-                } else if (response.status === 403) {
-                    showMessage('Wrong PIN', true);
-                } else if (response.status === 404) {
-                    showMessage('Unknown device / QR invalid', true);
-                } else if (response.status === 410) {
-                    showMessage('Session expired. Scan new QR code.', true);  // NEW: Handle 410
-                } else if (response.status === 429) {
-                    showMessage('Too many commands. Please wait.', true);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    sessionToken = data.session_token;
+
+                    // Auto-send toggle command
+                    await sendToggleCommand();
+                } else if (resp.status === 403) {
+                    shakeDots();
+                    showMessage('pin-message', 'Wrong PIN or expired QR', true);
+                    resetPin();
+                } else if (resp.status === 429) {
+                    const data = await resp.json().catch(() => ({}));
+                    showMessage('pin-message', data.detail || 'Too many attempts. Wait and retry.', true);
+                    resetPin();
                 } else {
-                    showMessage('Error: ' + response.status, true);
+                    showMessage('pin-message', 'Error: ' + resp.status, true);
+                    resetPin();
                 }
             } catch (error) {
-                showMessage('Network error. Check connection.', true);
+                showMessage('pin-message', 'Network error. Check connection.', true);
+                resetPin();
+            }
+        }
+
+        function resetPin() {
+            pin = '';
+            hiddenInput.value = '';
+            updateDots();
+            document.getElementById('pin-status').textContent = 'Enter your 4-digit PIN';
+            document.getElementById('pin-status').style.opacity = '0.45';
+            busy = false;
+            setTimeout(focusInput, 100);
+        }
+
+        // --- Send toggle command (ARM if disarmed, DISARM if armed) ---
+        async function sendToggleCommand() {
+            if (!sessionToken) return;
+
+            // Send ARM first — server/app will figure out the toggle
+            // If app is disarmed → ARM command arms it
+            // If app is armed → DISARM command disarms it
+            // We send both — the app ignores commands that don't apply to current state
+            const commands = ['ARM', 'DISARM'];
+
+            let sentCommand = null;
+            for (const cmd of commands) {
+                try {
+                    const resp = await fetch(BACKEND_URL + '/command', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            session_token: sessionToken,
+                            command: cmd,
+                        })
+                    });
+                    if (resp.ok) {
+                        sentCommand = cmd;
+                    }
+                } catch (e) { }
             }
 
-            setButtonsEnabled(true);
+            // Switch to command screen
+            document.getElementById('pin-screen').style.display = 'none';
+            document.getElementById('command-screen').style.display = 'block';
+            document.getElementById('subtitle').textContent = '';
+
+            document.getElementById('title').textContent = 'Command Sent';
+            document.getElementById('cmd-status').textContent = 'Signal sent to your laptop';
+            document.getElementById('cmd-detail').textContent = 'You can close this page now.';
+
+            showMessage('cmd-message', 'Connected successfully', false);
+            busy = false;
         }
     </script>
 </body>
